@@ -1,0 +1,36 @@
+{
+  "name": "@lnfsink/csv-handler",
+  "version": "1.0.0",
+  "description": "A library that reads CSV files synchronously",
+  "main": "dist/file-handler.cjs.js",
+  "module": "dist/file-handler.esm.js",
+  "scripts": {
+    "test": "babel-node example/index.js",
+    "build": "rollup -c"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/lnfsink/csv-handler.git"
+  },
+  "keywords": [
+    "nodejs",
+    "file",
+    "csv",
+    "read",
+    "write"
+  ],
+  "author": "lnfsink",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lnfsink/csv-handler/issues"
+  },
+  "homepage": "https://github.com/lnfsink/csv-handler#readme",
+  "devDependencies": {
+    "@babel/core": "^7.4.5",
+    "@babel/node": "^7.4.5",
+    "@babel/plugin-external-helpers": "^7.2.0",
+    "@babel/preset-env": "^7.4.5",
+    "rollup": "^1.16.4",
+    "rollup-plugin-babel": "^4.3.3"
+  }
+}
