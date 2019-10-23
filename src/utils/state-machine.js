@@ -1,21 +1,21 @@
-const eol = ['\n', '\r\n', '\r']
-const separator = ','
-const quoted = '"'
+import {
+  eol,
+  separator,
+  quoted
+} from './constants'
 
-let col = []
-let row = []
-
-export function end () {
+export function end (storage) {
+  let { row, col } = storage
   if (col.length) {
     row.push(col.join(''))
-    col = []
+    storage.col = []
   }
   let result = row
-  row = []
+  storage.row = []
   return result
 }
 
-export function start (char) {
+export function start (char, { col }) {
   if (quoted === char) {
     return inQuotedField
   } else if (separator === char || eol.includes(char)) {
@@ -26,7 +26,7 @@ export function start (char) {
   }
 }
 
-export function inQuotedField (char) {
+export function inQuotedField (char, { col }) {
   if (char === quoted) {
     return inQuotedFieldEnd
   } else {
@@ -35,13 +35,14 @@ export function inQuotedField (char) {
   }
 }
 
-export function inQuotedFieldEnd (char) {
+export function inQuotedFieldEnd (char, storage) {
+  let { row, col } = storage
   if (char === quoted) {
     col.push(char)
     return inQuotedField
   } else if (char === separator) {
     row.push(col.join(''))
-    col = []
+    storage.col = []
     return start
   } else if (eol.includes(char)) {
     return end
@@ -50,10 +51,11 @@ export function inQuotedFieldEnd (char) {
   }
 }
 
-export function inStandardField (char) {
+export function inStandardField (char, storage) {
+  let { row, col } = storage
   if (char === separator) {
     row.push(col.join(''))
-    col = []
+    storage.col = []
     return start
   } else if (eol.includes(char)) {
     return end
@@ -63,7 +65,7 @@ export function inStandardField (char) {
   }
 }
 
-export const States = {
+export default {
   start,
   inQuotedField,
   inQuotedFieldEnd,

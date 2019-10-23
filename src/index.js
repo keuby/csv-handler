@@ -1,6 +1,9 @@
 import { CsvReader } from './libs/csv-reader'
 
 let reader = new CsvReader('./example/input.csv')
-for (let row of reader.readSync()) {
-  console.log(row)
+async function main () {
+  for await (let row of reader.read()) {
+    console.log(row)
+  }
 }
+main()
