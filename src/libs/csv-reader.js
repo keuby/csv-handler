@@ -4,13 +4,36 @@ import {
   start
 } from '../utils/state-machine'
 
-export class CsvReader {
+function *readSync(reader) {
+  let buffer = Buffer.alloc(reader._buffer_size)
+  let fd = fs.openSync(reader.fpath, 'r')
+  let state = start, storage = { col: [], row: [] }
+  let bytesReadNum = 0, data = ''
+  while ((bytesReadNum = fs.readSync(fd, buffer, 0, buffer.byteLength, null)) !== 0) {
+    data = buffer.toString(reader._encoding, 0, bytesReadNum)
+    for (let char of data) {
+      state = state(char, storage)
+      if (state === end) {
+        yield state(storage)
+        state = start
+      }
+    }
+  }
+  let row = end(storage)
+  row.length && (yield row)
+  fs.closeSync(fd)
+}
+
+export default class CsvReader {
   constructor (path, {
-    bufferSize = 1024 * 1024 * 50,
-    encoding = 'utf8'
+    buffer_size = 1024 * 1024 * 50,
+    encoding = 'utf8',
+    ...options
   } = {}) {
     this._encoding = encoding
-    this._bufferSize = bufferSize
+    this._buffer_size = buffer_size
+    this._size = null
+    this.options = options
     this.fstat = this.fpath = null
     if (!(path && this.open(path))) {
       throw new Error(path + ' is not a file')
@@ -22,43 +45,22 @@ export class CsvReader {
     return this.fstat.isFile && !!(this.fpath = path)
   }
 
-  *readSync () {
-    let buffer = Buffer.alloc(this._bufferSize)
-    let fd = fs.openSync(this.fpath, 'r')
-    let bytesReadNum = 0, data = null
-    let state = start, storage = { col: [], row: [] }
-    while ((bytesReadNum = fs.readSync(fd, buffer, 0, buffer.byteLength, null)) !== 0) {
-      data = buffer.toString(this._encoding, 0, bytesReadNum)
-      for (let char of data) {
-        state = state(char, storage)
-        if (state === end) {
-          yield state(storage)
-          state = start
-        }
-      }
+  read () {
+    let it = readSync(this)
+    if (this.options.skip_header) {
+      it.next()
     }
-    let row = end(storage)
-    row.length && (yield row)
-    fs.closeSync(fd)
+    return it
   }
 
-  async *read () {
-    let buffer = Buffer.alloc(this._bufferSize)
-    let fd = fs.openSync(this.fpath, 'r')
-    let bytesReadNum = 0, data = null
-    let state = start, storage = { col: [], row: [] }
-    while((bytesReadNum = await fs.read(fd, buffer, 0, buffer.byteLength, null)) !== 0) {
-      data = buffer.toString(this._encoding, 0, bytesReadNum)
-      for (let char of data) {
-        state = state(char, storage)
-        if (state === end) {
-          yield state(storage)
-          state = start
-        }
-      }
+  size () {
+    if (this._size !== null) {
+      return this._size
     }
-    let row = end(storage)
-    row.length && (yield row)
-    await fs.close(fd)
+    let i = 0
+    for (let _ of this.read()) {
+      i++
+    }
+    return this._size = i
   }
 }
